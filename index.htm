@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>打音他音籃球遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* 天空藍 */
+            touch-action: none; /* 防止手機下拉刷新 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* 隱藏/顯示控制 */
+        .hidden { display: none !important; }
+
+        /* 麥克風閃爍動畫 */
+        @keyframes blink {
+            0% { opacity: 1; transform: scale(1); color: #ef4444; }
+            50% { opacity: 0.5; transform: scale(1.1); color: #dc2626; }
+            100% { opacity: 1; transform: scale(1); color: #ef4444; }
+        }
+        .animate-blink {
+            animation: blink 1.5s infinite ease-in-out;
+        }
+
+        /* 彈出視窗動畫 */
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 按鈕長按進度條 */
+        .progress-btn-container {
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background-color: rgba(34, 197, 94, 0.5); /* 綠色半透明 */
+            width: 0%;
+            z-index: 1;
+            transition: width 0.1s linear;
+        }
+        .progress-btn-text {
+            position: relative;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 遊戲畫布 -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI 覆蓋層 -->
+    <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4">
+        <div class="flex justify-between items-start">
+            <div class="bg-white/80 rounded-xl p-3 shadow-lg pointer-events-auto">
+                <p class="text-xl font-bold text-blue-800">分數: <span id="ui-score">0</span></p>
+                <p class="text-md text-gray-700 font-semibold mt-1" id="ui-round-container">回合: <span id="ui-round">1</span><span id="ui-max-round">/10</span></p>
+                <p class="text-md font-bold text-orange-600 mt-1">機會: <span id="ui-lives">🏀🏀🏀</span></p>
+            </div>
+            <button id="btn-home" class="bg-red-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg pointer-events-auto active:bg-red-600 border-b-4 border-red-700 active:border-b-0 active:translate-y-1 transition-all">
+                返回主選單
+            </button>
+        </div>
+    </div>
+
+    <!-- 主選單 -->
+    <div id="menu-screen" class="absolute inset-0 bg-[#87CEEB] flex flex-col items-center justify-center p-6 z-50">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-blue-400 pop-in">
+            <div class="text-6xl mb-4">🏀</div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-blue-600 mb-2">打音他音籃球遊戲</h1>
+            <p class="text-gray-600 mb-8 font-semibold">練習 /t-/ 和 /th-/ 發音！</p>
+            
+            <div class="space-y-4">
+                <button id="btn-mode-auditory" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">
+                    👂 分辨模式<br><span class="text-sm font-normal">(無限回合)</span>
+                </button>
+                <button id="btn-mode-practice" class="w-full bg-green-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-green-600 active:bg-green-700 border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition-all">
+                    🗣️ 練習模式<br><span class="text-sm font-normal">(10回合)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任務/復活彈出視窗 -->
+    <div id="task-modal" class="hidden absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 z-40 backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-lg w-full text-center pop-in border-4 border-yellow-400">
+            
+            <!-- 復活專用圖示 -->
+            <div id="revive-icon" class="hidden mb-4">
+                <div class="text-6xl animate-blink">🎙️</div>
+                <p class="text-red-500 font-bold mt-2">請對著麥克風讀出以下字詞</p>
+            </div>
+
+            <!-- 一般獎勵圖示 -->
+            <div id="reward-icon" class="hidden mb-4">
+                <div class="text-6xl">🌟</div>
+                <p class="text-blue-500 font-bold mt-2">太棒了！連續入樽！請用以下字詞造句：</p>
+            </div>
+
+            <h2 id="task-title" class="text-2xl font-bold text-gray-800 mb-6">請用以下字詞造句並朗讀出來</h2>
+            
+            <!-- 字詞顯示區 -->
+            <div id="word-container" class="flex flex-wrap justify-center gap-4 mb-8">
+                <!-- JS 動態填入 -->
+            </div>
+
+            <!-- 一般繼續按鈕 -->
+            <button id="btn-continue-normal" class="hidden w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg active:bg-blue-600 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">
+                繼續 (Continue)
+            </button>
+
+            <!-- 復活長按按鈕 -->
+            <button id="btn-continue-revive" class="hidden w-full bg-orange-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg progress-btn-container select-none">
+                <div id="revive-progress" class="progress-bar"></div>
+                <span class="progress-btn-text">長按 2 秒復活並繼續</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 遊戲結束視窗 -->
+    <div id="game-over-modal" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-4 z-40 backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center pop-in border-4 border-red-500">
+            <div class="text-6xl mb-2">😢</div>
+            <h2 class="text-3xl font-extrabold text-red-600 mb-2">再接再厲！</h2>
+            <p class="text-xl text-gray-700 mb-6 font-bold">總分: <span id="final-score">0</span></p>
+            
+            <div class="space-y-4">
+                <button id="btn-revive" class="w-full bg-orange-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-orange-600 active:bg-orange-700 border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2">
+                    💖 讀字復活
+                </button>
+                <button id="btn-restart" class="w-full bg-gray-500 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-gray-600 active:bg-gray-700 border-b-4 border-gray-700 active:border-b-0 active:translate-y-1 transition-all">
+                    重新開始
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 勝利視窗 (發音練習模式完成 10 回合) -->
+    <div id="win-modal" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-4 z-40 backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full text-center pop-in border-4 border-green-500">
+            <div class="text-6xl mb-2">🏆</div>
+            <h2 class="text-3xl font-extrabold text-green-600 mb-2">挑戰完成！</h2>
+            <p class="text-gray-600 mb-2 font-semibold">你完成了 10 回合的發音練習！</p>
+            <p class="text-2xl text-gray-800 mb-6 font-bold">總分: <span id="win-score">0</span></p>
+            
+            <button id="btn-win-home" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">
+                返回主選單
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 詞彙庫 ---
+        const auditoryWords = [
+            // /k-/ vs. /t-/
+            ["家", "（一）打"], ["哥", "多"], ["假", "打"], ["公", "冬"], ["糕", "刀"], ["狗", "豆"], ["驚", "釘"], ["劍", "店"], ["梘", "蛋"], ["鏡", "掟"], ["京", "叮"], ["雞", "低"],
+            // /t-/ vs. /th-/
+            ["（一）打", "他"], ["多", "拖"], ["冬", "通"], ["刀", "滔"], ["豆", "唞"], ["釘", "聽"], ["擋", "糖"], ["擋", "躺"], ["兜", "偷"], ["底", "睇"], ["袋", "枱"], ["懂", "桶"], ["搭", "塔"], ["當", "湯"],
+            // /t-/ vs. Random
+            ["多", "波"], ["刀", "煲"], ["的", "逼"], ["電", "便"], ["到", "布"], ["地", "鼻"], ["蛋", "板"], ["單", "班"]
+        ];
+
+        const practiceWordsStr = "貓頭鷹🦉/海豚🐬/叮噹/鴕鳥𓅦/臭豆腐/兩條薯條🍟/通粉/意大利粉🍝/甜品🍨/湯圓/鐵板燒/蛋糕🍰/蛋撻/雞蛋🥚/多士🍞/貼紙/頭箍/TicTac糖🍬/的士🚕/長凳/釘/電視機📺/牧童笛/花朵🌸/電車🚋/糖水/馬桶🚽/枱布/電筒🔦/天橋/停車場🅿️/沙灘🏖/跳舞💃/彈鋼琴🎹/彈結他🎸/跳彈床/搭地鐵🚇/食楊桃⭐/踢⚽/掉垃圾🗑";
+        const practiceWords = practiceWordsStr.split('/');
+
+        // --- 音效系統 (Web Audio API) ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type, duration, vol) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        let aimSoundLastPlay = 0;
+        function playAimSound() {
+            initAudio();
+            let now = Date.now();
+            if (now - aimSoundLastPlay > 100) { // 限制播放頻率
+                playTone(600 + Math.random()*200, 'sine', 0.1, 0.05);
+                aimSoundLastPlay = now;
+            }
+        }
+
+        function playScoreSound() {
+            initAudio();
+            playTone(523.25, 'sine', 0.1, 0.2); // C5
+            setTimeout(() => playTone(659.25, 'sine', 0.1, 0.2), 100); // E5
+            setTimeout(() => playTone(783.99, 'sine', 0.2, 0.2), 200); // G5
+        }
+
+        function playBounceSound() {
+            initAudio();
+            playTone(150, 'triangle', 0.1, 0.3);
+        }
+
+        function playFailSound() {
+            initAudio();
+            playTone(300, 'sawtooth', 0.3, 0.2);
+            setTimeout(() => playTone(250, 'sawtooth', 0.4, 0.2), 200);
+        }
+
+
+        // --- 遊戲引擎與狀態 ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let scale = 1;
+        let floorY = 0; // 新增地板高度變數
+
+        // 狀態變數
+        const MODES = { AUDITORY: 'auditory', PRACTICE: 'practice' };
+        let currentMode = MODES.AUDITORY;
+        let gameState = 'MENU'; // MENU, PLAYING, AIMING, FLYING, TASK, GAMEOVER, WIN
+        
+        let score = 0;
+        let round = 1;
+        let streak = 0;
+        let targetStreak = 3; // 3 到 5 之間
+        let lives = 3; // 新增 3 次機會
+        
+        function updateLivesUI() {
+            let str = '';
+            for(let i=0; i<lives; i++) str += '🏀';
+            document.getElementById('ui-lives').innerText = str || '無';
+        }
+        
+        // 物理物件
+        const gravity = 0.4;
+        let ball = { x: 0, y: 0, vx: 0, vy: 0, radius: 25, isScored: false, previousY: 0 };
+        let hoop = { x: 0, y: 0, width: 120, height: 10, rimRadius: 5 };
+        
+        // 瞄準操作
+        let aimStart = { x: 0, y: 0 };
+        let aimCurrent = { x: 0, y: 0 };
+        const MAX_PULL = 200;
+        const POWER_MULTIPLIER = 0.18;
+
+        // --- 初始化與調整大小 ---
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            
+            // 基礎參考高度為 800，根據螢幕計算縮放
+            scale = Math.min(width / 400, height / 800);
+            
+            ball.radius = 20 * scale;
+            hoop.width = 110 * scale;
+            hoop.height = 10 * scale;
+            hoop.rimRadius = 6 * scale;
+
+            floorY = height - (100 * scale); // 根據縮放比例計算地板的 Y 座標
+
+            if (gameState !== 'FLYING') {
+                resetBallPosition();
+            }
+            updateHoopPosition();
+        }
+        window.addEventListener('resize', resize);
+
+        function updateHoopPosition() {
+            // 籃框在右側上方
+            hoop.x = width - hoop.width - (30 * scale);
+            hoop.y = height * 0.35;
+        }
+
+        function resetBallPosition() {
+            // 隨機產生 X 軸位置，改變每次投籃的距離
+            let minX = 40 * scale;
+            let maxX = width * 0.55; // 最遠生成於畫面約一半的地方，保留投籃空間
+            ball.x = minX + Math.random() * (maxX - minX);
+            ball.y = floorY - ball.radius; // 將球放置於地板上方
+            ball.vx = 0;
+            ball.vy = 0;
+            ball.isScored = false;
+        }
+
+        function getNewTargetStreak() {
+            return 2; // 兩種模式都固定每 2 次連續進球出現字詞
+        }
+
+        // --- 核心遊戲迴圈 ---
+        let lastTime = 0;
+        function loop(timestamp) {
+            requestAnimationFrame(loop);
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+
+            update();
+            draw();
+        }
+
+        function update() {
+            if (gameState === 'FLYING') {
+                ball.previousY = ball.y;
+                
+                // 物理運動
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                ball.vy += gravity * scale; // 根據縮放調整重力感覺
+
+                // 邊界碰撞 (左右)
+                if (ball.x + ball.radius > width || ball.x - ball.radius < 0) {
+                    ball.vx *= -0.7; // 邊界反彈
+                    ball.x = ball.x > width/2 ? width - ball.radius : ball.radius;
+                    playBounceSound();
+                }
+
+                // 籃板碰撞 (籃板在籃框右側)
+                let backboardX = hoop.x + hoop.width;
+                let backboardTop = hoop.y - (80 * scale);
+                let backboardBottom = hoop.y + (30 * scale);
+                if (ball.x + ball.radius > backboardX && ball.x < backboardX + (10*scale) && ball.y > backboardTop && ball.y < backboardBottom) {
+                    if (ball.vx > 0) {
+                        ball.vx *= -0.6; // 撞擊籃板反彈
+                        ball.x = backboardX - ball.radius;
+                        playBounceSound();
+                    }
+                }
+
+                // 籃框邊緣碰撞 (前沿與後沿)
+                checkRimCollision(hoop.x, hoop.y); // 前沿
+                checkRimCollision(hoop.x + hoop.width, hoop.y); // 後沿
+
+                // 偵測入樽 (球從上方落下穿過籃框)
+                if (!ball.isScored && ball.vy > 0 && ball.previousY < hoop.y && ball.y >= hoop.y) {
+                    if (ball.x > hoop.x && ball.x < hoop.x + hoop.width) {
+                        ball.isScored = true;
+                        scoreRound();
+                    }
+                }
+
+                // 落地偵測 (改為偵測是否碰到地板 floorY)
+                if (ball.y + ball.radius > floorY) {
+                    ball.y = floorY - ball.radius;
+                    ball.vy *= -0.5;
+                    ball.vx *= 0.8;
+                    
+                    if (Math.abs(ball.vy) > 2) playBounceSound();
+
+                    // 球停下後處理結果
+                    if (Math.abs(ball.vy) < 1 && Math.abs(ball.vx) < 0.5) {
+                        ball.vx = 0;
+                        ball.vy = 0;
+                        
+                        if (ball.isScored) {
+                            nextRound();
+                        } else {
+                            lives--;
+                            updateLivesUI();
+                            if (lives > 0) {
+                                gameState = 'WAITING'; // 防止重複觸發
+                                playFailSound(); 
+                                setTimeout(() => {
+                                    resetBallPosition();
+                                    gameState = 'PLAYING';
+                                }, 500); // 暫停0.5秒後給予下一次機會
+                            } else {
+                                handleGameOver();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkRimCollision(rx, ry) {
+            let dx = ball.x - rx;
+            let dy = ball.y - ry;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < ball.radius + hoop.rimRadius) {
+                // 簡單碰撞反彈
+                let angle = Math.atan2(dy, dx);
+                let speed = Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy);
+                ball.vx = Math.cos(angle) * speed * 0.6;
+                ball.vy = Math.sin(angle) * speed * 0.6;
+                
+                // 推開球避免黏住
+                ball.x = rx + Math.cos(angle) * (ball.radius + hoop.rimRadius + 1);
+                ball.y = ry + Math.sin(angle) * (ball.radius + hoop.rimRadius + 1);
+                playBounceSound();
+            }
+        }
+
+        // --- 繪製 ---
+        function draw() {
+            // 背景清理 (由 CSS 處理背景色，這裡只需清空)
+            ctx.clearRect(0, 0, width, height);
+
+            if (gameState === 'MENU') return;
+
+            // 畫雲朵裝飾
+            drawClouds();
+
+            // 畫灰色地板
+            ctx.fillStyle = '#94a3b8'; // 灰色地板
+            ctx.fillRect(0, floorY, width, height - floorY);
+            ctx.strokeStyle = '#cbd5e1'; // 地板邊線增加立體感
+            ctx.lineWidth = 4 * scale;
+            ctx.beginPath();
+            ctx.moveTo(0, floorY);
+            ctx.lineTo(width, floorY);
+            ctx.stroke();
+
+            // 畫籃架與籃板
+            ctx.fillStyle = '#cbd5e1'; // 支架
+            // 修正支架長度，讓它剛好連著地板
+            ctx.fillRect(hoop.x + hoop.width + (5*scale), hoop.y - (80*scale), 15*scale, floorY - (hoop.y - (80*scale)));
+            
+            ctx.fillStyle = '#ffffff'; // 籃板
+            ctx.fillRect(hoop.x + hoop.width, hoop.y - (80*scale), 10*scale, 110*scale);
+            ctx.strokeStyle = '#ef4444'; // 籃板紅線
+            ctx.lineWidth = 4 * scale;
+            ctx.strokeRect(hoop.x + hoop.width - (2*scale), hoop.y - (40*scale), 8*scale, 50*scale);
+
+            // 畫籃網 (後方)
+            ctx.strokeStyle = '#f8fafc';
+            ctx.lineWidth = 2 * scale;
+            ctx.beginPath();
+            ctx.moveTo(hoop.x + (10*scale), hoop.y);
+            ctx.lineTo(hoop.x + (30*scale), hoop.y + (60*scale));
+            ctx.lineTo(hoop.x + hoop.width - (30*scale), hoop.y + (60*scale));
+            ctx.lineTo(hoop.x + hoop.width - (10*scale), hoop.y);
+            ctx.stroke();
+
+            // 畫球
+            drawBall(ball.x, ball.y, ball.radius);
+
+            // 畫籃框前沿 (蓋在球上方產生穿過效果)
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.arc(hoop.x, hoop.y, hoop.rimRadius, 0, Math.PI*2);
+            ctx.arc(hoop.x + hoop.width, hoop.y, hoop.rimRadius, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillRect(hoop.x, hoop.y - hoop.rimRadius, hoop.width, hoop.rimRadius*2);
+
+            // 畫瞄準軌跡
+            if (gameState === 'AIMING') {
+                drawTrajectory();
+            }
+        }
+
+        function drawBall(x, y, r) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            // 旋轉球 (根據 x 位置簡單模擬)
+            ctx.rotate(x * 0.05);
+
+            // 改用 Emoji 繪製籃球，更為真實有趣
+            ctx.font = `${r * 1.8}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🏀', 0, 0);
+
+            ctx.restore();
+        }
+
+        function drawTrajectory() {
+            let dx = aimStart.x - aimCurrent.x;
+            let dy = aimStart.y - aimCurrent.y;
+            
+            // 限制最大拉力
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > MAX_PULL * scale) {
+                dx = (dx / dist) * MAX_PULL * scale;
+                dy = (dy / dist) * MAX_PULL * scale;
+            }
+
+            let simVx = dx * POWER_MULTIPLIER;
+            let simVy = dy * POWER_MULTIPLIER;
+            let simX = ball.x;
+            let simY = ball.y;
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            for (let i = 0; i < 30; i++) { // 增加預測點的數量(由20改為30)，讓瞄準更容易
+                simX += simVx * 3; // 放大步長預測
+                simY += simVy * 3;
+                simVy += gravity * scale * 3;
+                
+                ctx.beginPath();
+                ctx.arc(simX, simY, 4 * scale, 0, Math.PI*2);
+                ctx.fill();
+
+                // 當拋物線預測碰到地板時停止繪製
+                if (simY + (4 * scale) > floorY) break;
+            }
+        }
+
+        // 簡單背景裝飾
+        const clouds = [
+            { x: 0.1, y: 0.1, s: 1, v: 0.0003 }, 
+            { x: 0.5, y: 0.15, s: 1.5, v: 0.0002 }, 
+            { x: 0.8, y: 0.08, s: 0.8, v: 0.0004 }
+        ];
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            clouds.forEach(c => {
+                // 更新雲朵位置，讓雲朵向右飄動
+                c.x += c.v;
+                // 若雲朵完全移出畫面右側，則從左側重新出現
+                if (c.x > 1.2) {
+                    c.x = -0.2;
+                }
+
+                let cx = c.x * width;
+                let cy = c.y * height;
+                let cs = c.s * 30 * scale;
+                ctx.beginPath();
+                ctx.arc(cx, cy, cs, 0, Math.PI*2);
+                ctx.arc(cx + cs, cy - cs*0.2, cs*1.2, 0, Math.PI*2);
+                ctx.arc(cx + cs*2, cy, cs, 0, Math.PI*2);
+                ctx.fill();
+            });
+        }
+
+        // --- 輸入控制 ---
+        function handlePointerDown(e) {
+            if (gameState !== 'PLAYING') return;
+            initAudio(); // 確保解鎖音效
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // 移除原本必須點擊籃球附近的限制，現在點擊螢幕任何地方都可以拖拉瞄準，大幅降低難度並修復發音模式點不到的問題
+            gameState = 'AIMING';
+            aimStart = { x: clientX, y: clientY };
+            aimCurrent = { x: clientX, y: clientY };
+        }
+
+        function handlePointerMove(e) {
+            if (gameState !== 'AIMING') return;
+            e.preventDefault(); // 防止滾動
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            aimCurrent = { x: clientX, y: clientY };
+            playAimSound();
+        }
+
+        function handlePointerUp(e) {
+            if (gameState !== 'AIMING') return;
+            gameState = 'FLYING';
+
+            let dx = aimStart.x - aimCurrent.x;
+            let dy = aimStart.y - aimCurrent.y;
+            
+            // 如果拉力太小則取消
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 10) {
+                gameState = 'PLAYING';
+                return;
+            }
+
+            if (dist > MAX_PULL * scale) {
+                dx = (dx / dist) * MAX_PULL * scale;
+                dy = (dy / dist) * MAX_PULL * scale;
+            }
+
+            ball.vx = dx * POWER_MULTIPLIER;
+            ball.vy = dy * POWER_MULTIPLIER;
+        }
+
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
+        
+        canvas.addEventListener('touchstart', handlePointerDown, {passive: false});
+        canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+        window.addEventListener('touchend', handlePointerUp);
+
+        // --- 遊戲邏輯 ---
+        function startGame(mode) {
+            currentMode = mode;
+            score = 0;
+            round = 1;
+            streak = 0;
+            targetStreak = getNewTargetStreak();
+            lives = 3; // 每次開始遊戲重置 3 次機會
+            updateLivesUI();
+            
+            document.getElementById('ui-score').innerText = score;
+            document.getElementById('ui-round').innerText = round;
+            
+            if (mode === MODES.PRACTICE) {
+                document.getElementById('ui-round-container').classList.remove('hidden');
+            } else {
+                document.getElementById('ui-round-container').classList.add('hidden');
+            }
+
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('ui-layer').classList.remove('hidden');
+            
+            resize(); // 確保位置正確
+            gameState = 'PLAYING';
+        }
+
+        function scoreRound() {
+            playScoreSound();
+            score += 10;
+            streak += 1;
+            document.getElementById('ui-score').innerText = score;
+        }
+
+        function nextRound() {
+            resetBallPosition();
+            
+            if (currentMode === MODES.PRACTICE) {
+                round++;
+                if (round > 10) {
+                    showWinModal();
+                    return;
+                }
+                document.getElementById('ui-round').innerText = round;
+            }
+
+            // 檢查是否觸發字詞任務
+            if (streak >= targetStreak) {
+                showTaskModal(false);
+            } else {
+                gameState = 'PLAYING';
+            }
+        }
+
+        function handleGameOver() {
+            playFailSound();
+            streak = 0; // 斷掉連勝
+            gameState = 'GAMEOVER';
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+        }
+
+        // --- 彈出視窗與字詞任務邏輯 ---
+        function showTaskModal(isRevive) {
+            gameState = 'TASK';
+            const modal = document.getElementById('task-modal');
+            const wordContainer = document.getElementById('word-container');
+            const btnNormal = document.getElementById('btn-continue-normal');
+            const btnRevive = document.getElementById('btn-continue-revive');
+            const reviveIcon = document.getElementById('revive-icon');
+            const rewardIcon = document.getElementById('reward-icon');
+            const taskTitle = document.getElementById('task-title');
+
+            wordContainer.innerHTML = '';
+            modal.classList.remove('hidden');
+
+            if (isRevive) {
+                // 復活模式：4個練習字，長按繼續
+                reviveIcon.classList.remove('hidden');
+                rewardIcon.classList.add('hidden');
+                btnRevive.classList.remove('hidden');
+                btnNormal.classList.add('hidden');
+                taskTitle.innerText = "讀出這4個詞語來復活！";
+                
+                let words = getRandomWords(practiceWords, 4);
+                renderWords(words, wordContainer);
+
+            } else {
+                // 一般獎勵模式
+                reviveIcon.classList.add('hidden');
+                rewardIcon.classList.remove('hidden');
+                btnNormal.classList.remove('hidden');
+                btnRevive.classList.add('hidden');
+                taskTitle.innerText = "請讀出以下字詞";
+
+                if (currentMode === MODES.AUDITORY) {
+                    // 聽覺分辨：1對字詞
+                    let pair = auditoryWords[Math.floor(Math.random() * auditoryWords.length)];
+                    renderWords(pair, wordContainer, true);
+                } else {
+                    // 發音練習：4個字詞
+                    let words = getRandomWords(practiceWords, 4);
+                    renderWords(words, wordContainer);
+                }
+                streak = 0; // 重置連勝計數
+                targetStreak = getNewTargetStreak(); // 設定下一次目標
+            }
+        }
+
+        function getRandomWords(sourceArray, count) {
+            let shuffled = [...sourceArray].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        function renderWords(wordsArray, container, isPair = false) {
+            if (isPair) {
+                // 顯示配對
+                container.innerHTML = `
+                    <div class="bg-blue-100 border-2 border-blue-400 rounded-xl p-4 m-2 text-3xl font-bold text-blue-900 shadow-sm">${wordsArray[0]}</div>
+                    <div class="flex items-center text-2xl font-bold text-gray-400">VS</div>
+                    <div class="bg-blue-100 border-2 border-blue-400 rounded-xl p-4 m-2 text-3xl font-bold text-blue-900 shadow-sm">${wordsArray[1]}</div>
+                `;
+            } else {
+                // 顯示單字
+                wordsArray.forEach(word => {
+                    let div = document.createElement('div');
+                    div.className = "bg-green-100 border-2 border-green-400 rounded-xl p-4 m-2 text-2xl font-bold text-green-900 shadow-sm";
+                    div.innerText = word;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function closeTaskModal() {
+            document.getElementById('task-modal').classList.add('hidden');
+            resetBallPosition();
+            gameState = 'PLAYING';
+        }
+
+        function showWinModal() {
+            gameState = 'WIN';
+            document.getElementById('win-score').innerText = score;
+            document.getElementById('win-modal').classList.remove('hidden');
+            playScoreSound();
+            setTimeout(playScoreSound, 300);
+        }
+
+        function goHome() {
+            document.getElementById('menu-screen').classList.remove('hidden');
+            document.getElementById('ui-layer').classList.add('hidden');
+            document.getElementById('game-over-modal').classList.add('hidden');
+            document.getElementById('win-modal').classList.add('hidden');
+            document.getElementById('task-modal').classList.add('hidden');
+            gameState = 'MENU';
+        }
+
+        // --- 復活按鈕長按邏輯 ---
+        let holdTimer = null;
+        let holdStartTime = 0;
+        let isHolding = false;
+        const HOLD_DURATION = 2000; // 2 秒
+
+        const btnReviveHold = document.getElementById('btn-continue-revive');
+        const progressBar = document.getElementById('revive-progress');
+
+        function startHold(e) {
+            e.preventDefault();
+            if(!isHolding) {
+                isHolding = true;
+                holdStartTime = Date.now();
+                updateProgress();
+            }
+        }
+
+        function updateProgress() {
+            if (!isHolding) return;
+            
+            let elapsed = Date.now() - holdStartTime;
+            let percent = Math.min((elapsed / HOLD_DURATION) * 100, 100);
+            progressBar.style.width = percent + '%';
+
+            if (percent >= 100) {
+                // 成功復活
+                isHolding = false;
+                progressBar.style.width = '0%';
+                closeTaskModal();
+                // 稍微給點分數鼓勵復活
+                score += 5;
+                lives = 3; // 復活後恢復 3 次機會
+                updateLivesUI();
+                document.getElementById('ui-score').innerText = score;
+            } else {
+                holdTimer = requestAnimationFrame(updateProgress);
+            }
+        }
+
+        function endHold(e) {
+            isHolding = false;
+            cancelAnimationFrame(holdTimer);
+            progressBar.style.width = '0%';
+        }
+
+        btnReviveHold.addEventListener('mousedown', startHold);
+        btnReviveHold.addEventListener('touchstart', startHold, {passive: false});
+        
+        window.addEventListener('mouseup', endHold);
+        window.addEventListener('touchend', endHold);
+
+        // --- 按鈕事件綁定 ---
+        document.getElementById('btn-mode-auditory').addEventListener('click', () => startGame(MODES.AUDITORY));
+        document.getElementById('btn-mode-practice').addEventListener('click', () => startGame(MODES.PRACTICE));
+        
+        document.getElementById('btn-home').addEventListener('click', goHome);
+        document.getElementById('btn-win-home').addEventListener('click', goHome);
+        
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            document.getElementById('game-over-modal').classList.add('hidden');
+            startGame(currentMode);
+        });
+
+        document.getElementById('btn-revive').addEventListener('click', () => {
+            document.getElementById('game-over-modal').classList.add('hidden');
+            showTaskModal(true); // 開啟復活任務
+        });
+
+        document.getElementById('btn-continue-normal').addEventListener('click', closeTaskModal);
+
+        // 啟動迴圈
+        resize();
+        requestAnimationFrame(loop);
+
+    </script>
+</body>
+</html>
