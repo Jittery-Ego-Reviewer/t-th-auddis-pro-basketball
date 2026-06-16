@@ -81,7 +81,7 @@
                 <p class="text-md text-gray-700 font-semibold mt-1" id="ui-round-container">回合: <span id="ui-round">1</span><span id="ui-max-round">/10</span></p>
                 <p class="text-md font-bold text-orange-600 mt-1">機會: <span id="ui-lives">🏀🏀🏀</span></p>
             </div>
-            <button id="btn-home" class="bg-red-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg pointer-events-auto active:bg-red-600 border-b-4 border-red-700 active:border-b-0 active:translate-y-1">
+            <button id="btn-home" class="bg-red-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg pointer-events-auto active:bg-red-600 border-b-4 border-red-700 active:border-b-0 active:translate-y-0.5">
                 返回主選單
             </button>
         </div>
@@ -95,11 +95,35 @@
             <p class="text-gray-600 mb-8 font-semibold">練習 /t-/ 和 /th-/ 發音！</p>
             
             <div class="space-y-4">
-                <button id="btn-mode-auditory" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
-                    👂 分辨模式<br><span class="text-sm font-normal">(不限回合)</span>
+                <button id="btn-mode-auditory" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-0.5">
+                    👂 分辨模式<br><span class="text-sm font-normal">(選擇難度)</span>
                 </button>
-                <button id="btn-mode-practice" class="w-full bg-green-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-green-600 active:bg-green-700 border-b-4 border-green-700 active:border-b-0 active:translate-y-1">
+                <button id="btn-mode-practice" class="w-full bg-green-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-green-600 active:bg-green-700 border-b-4 border-green-700 active:border-b-0 active:translate-y-0.5">
                     🗣️ 練習模式<br><span class="text-sm font-normal">(10回合)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分辨模式難度選擇 -->
+    <div id="auditory-mode-screen" class="hidden absolute inset-0 bg-[#87CEEB] flex flex-col items-center justify-center p-6 z-50">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-blue-400 pop-in">
+            <div class="text-5xl mb-4">👂</div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-blue-600 mb-2">選擇分辨難度</h1>
+            <p class="text-gray-600 mb-8 font-semibold">練習不同的發音對比</p>
+            
+            <div class="space-y-3">
+                <button id="btn-auditory-1" class="w-full bg-purple-500 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-purple-600 active:bg-purple-700 border-b-4 border-purple-700 active:border-b-0 active:translate-y-0.5">
+                    /k-/ vs. /t-/
+                </button>
+                <button id="btn-auditory-2" class="w-full bg-indigo-500 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-indigo-600 active:bg-indigo-700 border-b-4 border-indigo-700 active:border-b-0 active:translate-y-0.5">
+                    /t-/ vs. /th-/
+                </button>
+                <button id="btn-auditory-3" class="w-full bg-blue-500 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-0.5">
+                    /t-/ vs. Random
+                </button>
+                <button id="btn-back-to-menu" class="w-full bg-gray-400 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-gray-500 active:bg-gray-600 border-b-4 border-gray-600 active:border-b-0 active:translate-y-0.5">
+                    返回
                 </button>
             </div>
         </div>
@@ -129,7 +153,7 @@
             </div>
 
             <!-- 一般繼續按鈕 -->
-            <button id="btn-continue-normal" class="hidden w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg active:bg-blue-600 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
+            <button id="btn-continue-normal" class="hidden w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg active:bg-blue-600 border-b-4 border-blue-700 active:border-b-0 active:translate-y-0.5">
                 繼續
             </button>
 
@@ -149,10 +173,10 @@
             <p class="text-xl text-gray-700 mb-6 font-bold">總分: <span id="final-score">0</span></p>
             
             <div class="space-y-4">
-                <button id="btn-revive" class="w-full bg-orange-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-orange-600 active:bg-orange-700 border-b-4 border-orange-700 active:border-b-0 active:translate-y-1">
+                <button id="btn-revive" class="w-full bg-orange-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-orange-600 active:bg-orange-700 border-b-4 border-orange-700 active:border-b-0 active:translate-y-0.5">
                     💖 讀字復活
                 </button>
-                <button id="btn-restart" class="w-full bg-gray-500 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-gray-600 active:bg-gray-700 border-b-4 border-gray-700 active:border-b-0 active:translate-y-1">
+                <button id="btn-restart" class="w-full bg-gray-500 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-gray-600 active:bg-gray-700 border-b-4 border-gray-700 active:border-b-0 active:translate-y-0.5">
                     重新開始
                 </button>
             </div>
@@ -167,24 +191,27 @@
             <p class="text-gray-600 mb-2 font-semibold">你完成了 10 回合的發音練習！</p>
             <p class="text-2xl text-gray-800 mb-6 font-bold">總分: <span id="win-score">0</span></p>
             
-            <button id="btn-win-home" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
+            <button id="btn-win-home" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-0.5">
                 返回主選單
             </button>
         </div>
     </div>
 
     <script>
-        // --- 詞彙庫 ---
-        const auditoryWords = [
-            // /k-/ vs. /t-/
-            ["家", "（一）打"], ["哥", "多"], ["假", "打"], ["公", "冬"], ["糕", "刀"], ["狗", "豆"], ["驚", "釘"], ["劍", "店"], ["梘", "蛋"], ["鏡", "掟"], ["京", "叮"],
-            // /t-/ vs. /th-/
-            ["（一）打", "他"], ["多", "拖"], ["冬", "通"], ["刀", "滔"], ["豆", "唞"], ["釘", "聽"], ["擋", "糖"], ["擋", "躺"], ["兜", "偷"], ["底", "睇"], ["袋", "枱"],
-            // /t-/ vs. Random
+        // --- 詞彙庫 (分開三個分辨模式) ---
+        const auditoryWordsMode1 = [ // /k-/ vs. /t-/
+            ["家", "（一）打"], ["哥", "多"], ["假", "打"], ["公", "冬"], ["糕", "刀"], ["狗", "豆"], ["驚", "釘"], ["劍", "店"], ["梘", "蛋"], ["鏡", "掟"], ["京", "叮"]
+        ];
+
+        const auditoryWordsMode2 = [ // /t-/ vs. /th-/
+            ["（一）打", "他"], ["多", "拖"], ["冬", "通"], ["刀", "滔"], ["豆", "唞"], ["釘", "聽"], ["擋", "糖"], ["擋", "躺"], ["兜", "偷"], ["底", "睇"], ["袋", "枱"]
+        ];
+
+        const auditoryWordsMode3 = [ // /t-/ vs. Random
             ["多", "波"], ["刀", "煲"], ["的", "逼"], ["電", "便"], ["到", "布"], ["地", "鼻"], ["蛋", "板"], ["單", "班"]
         ];
 
-        const practiceWordsStr = "貓頭鷹🦉/海豚🐬/叮噹/鴕鳥𓅦/臭豆腐/兩條薯條🍟/通粉/意大利粉🍝/甜品🍨/湯圓/鐵板燒/蛋糕🍰/蛋撻/雞蛋🥚/多士🍞/打拖鞋/特色/他人/透明/桃花/探險/談天/唐裝/統計/體育/退休/推廣/脫靴/聽力/貼紙/糖果";
+        const practiceWordsStr = "貓頭鷹🦉/海豚🐬/叮噹/鴕鳥𓅦/臭豆腐/兩條薯條🍟/通粉/意大利粉🍝/甜品🍨/湯圓/鐵板燒/蛋糕🍰/蛋撻/雞蛋🥚/多士🍞/打的士/探險隊/鐵砧/椅子👩‍💼/小狗🐕/獨角獸";
         const practiceWords = practiceWordsStr.split('/');
 
         // --- 音效系統 (Web Audio API) ---
@@ -252,6 +279,7 @@
         // 狀態變數
         const MODES = { AUDITORY: 'auditory', PRACTICE: 'practice' };
         let currentMode = MODES.AUDITORY;
+        let auditorySubMode = 1; // 1, 2, 或 3
         let gameState = 'MENU'; // MENU, PLAYING, AIMING, FLYING, TASK, GAMEOVER, WIN
         
         let score = 0;
@@ -612,8 +640,11 @@
         window.addEventListener('touchend', handlePointerUp);
 
         // --- 遊戲邏輯 ---
-        function startGame(mode) {
+        function startGame(mode, subMode = 0) {
             currentMode = mode;
+            if (mode === MODES.AUDITORY) {
+                auditorySubMode = subMode;
+            }
             score = 0;
             round = 1;
             streak = 0;
@@ -631,6 +662,7 @@
             }
 
             document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('auditory-mode-screen').classList.add('hidden');
             document.getElementById('ui-layer').classList.remove('hidden');
             
             resize(); // 確保位置正確
@@ -707,6 +739,14 @@
                 if (currentMode === MODES.AUDITORY) {
                     // 聽覺分辨：1對字詞，不顯示 title
                     taskTitle.innerText = "";
+                    let auditoryWords;
+                    if (auditorySubMode === 1) {
+                        auditoryWords = auditoryWordsMode1;
+                    } else if (auditorySubMode === 2) {
+                        auditoryWords = auditoryWordsMode2;
+                    } else {
+                        auditoryWords = auditoryWordsMode3;
+                    }
                     let pair = auditoryWords[Math.floor(Math.random() * auditoryWords.length)];
                     renderWords(pair, wordContainer, true);
                 } else {
@@ -760,6 +800,7 @@
 
         function goHome() {
             document.getElementById('menu-screen').classList.remove('hidden');
+            document.getElementById('auditory-mode-screen').classList.add('hidden');
             document.getElementById('ui-layer').classList.add('hidden');
             document.getElementById('game-over-modal').classList.add('hidden');
             document.getElementById('win-modal').classList.add('hidden');
@@ -820,15 +861,33 @@
         window.addEventListener('touchend', endHold);
 
         // --- 按鈕事件綁定 ---
-        document.getElementById('btn-mode-auditory').addEventListener('click', () => startGame(MODES.AUDITORY));
+        document.getElementById('btn-mode-auditory').addEventListener('click', () => {
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('auditory-mode-screen').classList.remove('hidden');
+        });
+
         document.getElementById('btn-mode-practice').addEventListener('click', () => startGame(MODES.PRACTICE));
+        
+        document.getElementById('btn-auditory-1').addEventListener('click', () => startGame(MODES.AUDITORY, 1));
+        document.getElementById('btn-auditory-2').addEventListener('click', () => startGame(MODES.AUDITORY, 2));
+        document.getElementById('btn-auditory-3').addEventListener('click', () => startGame(MODES.AUDITORY, 3));
+        
+        document.getElementById('btn-back-to-menu').addEventListener('click', () => {
+            document.getElementById('auditory-mode-screen').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+        });
         
         document.getElementById('btn-home').addEventListener('click', goHome);
         document.getElementById('btn-win-home').addEventListener('click', goHome);
         
         document.getElementById('btn-restart').addEventListener('click', () => {
             document.getElementById('game-over-modal').classList.add('hidden');
-            startGame(currentMode);
+            if (currentMode === MODES.AUDITORY) {
+                document.getElementById('auditory-mode-screen').classList.remove('hidden');
+                document.getElementById('menu-screen').classList.add('hidden');
+            } else {
+                startGame(currentMode);
+            }
         });
 
         document.getElementById('btn-revive').addEventListener('click', () => {
