@@ -2,24 +2,27 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>打音他音籃球遊戲</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
+        html, body {
             margin: 0;
             padding: 0;
-            overflow: hidden;
             background-color: #87CEEB; /* 天空藍 */
             touch-action: none; /* 防止手機下拉刷新 */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
             -webkit-user-select: none;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
         }
         canvas {
             display: block;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: auto;
+            min-height: 100vh;
         }
         
         /* 隱藏/顯示控制 */
@@ -78,7 +81,7 @@
                 <p class="text-md text-gray-700 font-semibold mt-1" id="ui-round-container">回合: <span id="ui-round">1</span><span id="ui-max-round">/10</span></p>
                 <p class="text-md font-bold text-orange-600 mt-1">機會: <span id="ui-lives">🏀🏀🏀</span></p>
             </div>
-            <button id="btn-home" class="bg-red-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg pointer-events-auto active:bg-red-600 border-b-4 border-red-700 active:border-b-0 active:translate-y-1 transition-all">
+            <button id="btn-home" class="bg-red-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg pointer-events-auto active:bg-red-600 border-b-4 border-red-700 active:border-b-0 active:translate-y-1">
                 返回主選單
             </button>
         </div>
@@ -92,10 +95,10 @@
             <p class="text-gray-600 mb-8 font-semibold">練習 /t-/ 和 /th-/ 發音！</p>
             
             <div class="space-y-4">
-                <button id="btn-mode-auditory" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">
+                <button id="btn-mode-auditory" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
                     👂 分辨模式<br><span class="text-sm font-normal">(不限回合)</span>
                 </button>
-                <button id="btn-mode-practice" class="w-full bg-green-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-green-600 active:bg-green-700 border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition-all">
+                <button id="btn-mode-practice" class="w-full bg-green-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-green-600 active:bg-green-700 border-b-4 border-green-700 active:border-b-0 active:translate-y-1">
                     🗣️ 練習模式<br><span class="text-sm font-normal">(10回合)</span>
                 </button>
             </div>
@@ -126,7 +129,7 @@
             </div>
 
             <!-- 一般繼續按鈕 -->
-            <button id="btn-continue-normal" class="hidden w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg active:bg-blue-600 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">
+            <button id="btn-continue-normal" class="hidden w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg active:bg-blue-600 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
                 繼續
             </button>
 
@@ -146,10 +149,10 @@
             <p class="text-xl text-gray-700 mb-6 font-bold">總分: <span id="final-score">0</span></p>
             
             <div class="space-y-4">
-                <button id="btn-revive" class="w-full bg-orange-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-orange-600 active:bg-orange-700 border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2">
+                <button id="btn-revive" class="w-full bg-orange-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-orange-600 active:bg-orange-700 border-b-4 border-orange-700 active:border-b-0 active:translate-y-1">
                     💖 讀字復活
                 </button>
-                <button id="btn-restart" class="w-full bg-gray-500 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-gray-600 active:bg-gray-700 border-b-4 border-gray-700 active:border-b-0 active:translate-y-1 transition-all">
+                <button id="btn-restart" class="w-full bg-gray-500 text-white text-lg font-bold py-3 px-6 rounded-2xl shadow-lg hover:bg-gray-600 active:bg-gray-700 border-b-4 border-gray-700 active:border-b-0 active:translate-y-1">
                     重新開始
                 </button>
             </div>
@@ -164,7 +167,7 @@
             <p class="text-gray-600 mb-2 font-semibold">你完成了 10 回合的發音練習！</p>
             <p class="text-2xl text-gray-800 mb-6 font-bold">總分: <span id="win-score">0</span></p>
             
-            <button id="btn-win-home" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">
+            <button id="btn-win-home" class="w-full bg-blue-500 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-blue-600 active:bg-blue-700 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
                 返回主選單
             </button>
         </div>
@@ -174,14 +177,14 @@
         // --- 詞彙庫 ---
         const auditoryWords = [
             // /k-/ vs. /t-/
-            ["家", "（一）打"], ["哥", "多"], ["假", "打"], ["公", "冬"], ["糕", "刀"], ["狗", "豆"], ["驚", "釘"], ["劍", "店"], ["梘", "蛋"], ["鏡", "掟"], ["京", "叮"], ["雞", "低"],
+            ["家", "（一）打"], ["哥", "多"], ["假", "打"], ["公", "冬"], ["糕", "刀"], ["狗", "豆"], ["驚", "釘"], ["劍", "店"], ["梘", "蛋"], ["鏡", "掟"], ["京", "叮"],
             // /t-/ vs. /th-/
-            ["（一）打", "他"], ["多", "拖"], ["冬", "通"], ["刀", "滔"], ["豆", "唞"], ["釘", "聽"], ["擋", "糖"], ["擋", "躺"], ["兜", "偷"], ["底", "睇"], ["袋", "枱"], ["懂", "桶"], ["搭", "塔"], ["當", "湯"],
+            ["（一）打", "他"], ["多", "拖"], ["冬", "通"], ["刀", "滔"], ["豆", "唞"], ["釘", "聽"], ["擋", "糖"], ["擋", "躺"], ["兜", "偷"], ["底", "睇"], ["袋", "枱"],
             // /t-/ vs. Random
             ["多", "波"], ["刀", "煲"], ["的", "逼"], ["電", "便"], ["到", "布"], ["地", "鼻"], ["蛋", "板"], ["單", "班"]
         ];
 
-        const practiceWordsStr = "貓頭鷹🦉/海豚🐬/叮噹/鴕鳥𓅦/臭豆腐/兩條薯條🍟/通粉/意大利粉🍝/甜品🍨/湯圓/鐵板燒/蛋糕🍰/蛋撻/雞蛋🥚/多士🍞/貼紙/頭箍/TicTac糖🍬/的士🚕/長凳/釘/電視機📺/牧童笛/花朵🌸/電車🚋/糖水/馬桶🚽/枱布/電筒🔦/天橋/停車場🅿️/沙灘🏖/跳舞💃/彈鋼琴🎹/彈結他🎸/跳彈床/搭地鐵🚇/食楊桃⭐/踢⚽/掉垃圾🗑";
+        const practiceWordsStr = "貓頭鷹🦉/海豚🐬/叮噹/鴕鳥𓅦/臭豆腐/兩條薯條🍟/通粉/意大利粉🍝/甜品🍨/湯圓/鐵板燒/蛋糕🍰/蛋撻/雞蛋🥚/多士🍞/打拖鞋/特色/他人/透明/桃花/探險/談天/唐裝/統計/體育/退休/推廣/脫靴/聽力/貼紙/糖果";
         const practiceWords = practiceWordsStr.split('/');
 
         // --- 音效系統 (Web Audio API) ---
@@ -316,7 +319,7 @@
         }
 
         function getNewTargetStreak() {
-            return 2; // 兩種模式都固定每 2 次連續進球出現字詞
+            return 1; // 每次成功投籃都顯示字詞
         }
 
         // --- 核心遊戲迴圈 ---
@@ -487,8 +490,8 @@
             // 旋轉球 (根據 x 位置簡單模擬)
             ctx.rotate(x * 0.05);
 
-            // 改用 Emoji 繪製籃球，更為真實有趣
-            ctx.font = `${r * 1.8}px Arial`;
+            // 改用 Emoji 繪製籃球，使用 textBaseline='middle' 和 textAlign='center' 來確保垂直水平居中
+            ctx.font = `${r * 2}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🏀', 0, 0);
@@ -689,7 +692,7 @@
                 rewardIcon.classList.add('hidden');
                 btnRevive.classList.remove('hidden');
                 btnNormal.classList.add('hidden');
-                taskTitle.innerText = "讀出這4個詞語來復活！";
+                taskTitle.innerText = "";
                 
                 let words = getRandomWords(practiceWords, 4);
                 renderWords(words, wordContainer);
@@ -700,14 +703,15 @@
                 rewardIcon.classList.remove('hidden');
                 btnNormal.classList.remove('hidden');
                 btnRevive.classList.add('hidden');
-                taskTitle.innerText = "請讀出以下字詞";
 
                 if (currentMode === MODES.AUDITORY) {
-                    // 聽覺分辨：1對字詞
+                    // 聽覺分辨：1對字詞，不顯示 title
+                    taskTitle.innerText = "";
                     let pair = auditoryWords[Math.floor(Math.random() * auditoryWords.length)];
                     renderWords(pair, wordContainer, true);
                 } else {
-                    // 發音練習：4個字詞
+                    // 發音練習：4個字詞，不顯示 title
+                    taskTitle.innerText = "";
                     let words = getRandomWords(practiceWords, 4);
                     renderWords(words, wordContainer);
                 }
